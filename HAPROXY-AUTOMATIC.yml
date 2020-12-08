@@ -1,0 +1,57 @@
+---
+- name: HA PROXY CFG - SERVER
+  hosts: HAPROXY-SERVER
+  vars:
+    frontend_port: 8080
+  tasks:
+
+  - name: install HAPROXY
+    package:
+      name: "haproxy"
+      state: present
+
+  - name:
+    template:
+      src: "/ANSIBLE/HAPROXY-AUTOMATIC/haproxy.cfg.j2"
+      dest: "/etc/haproxy/haproxy.cfg"
+
+  - name: open port 8080 on FW
+    firewalld:
+      port: "{{frontend_port}}/tcp"
+      immediate: yes
+      permanent: yes
+      state: enabled
+
+  - name: start HAPROXY
+    service:
+      name: "haproxy"
+      state: "restarted"
+
+
+
+
+- name: HA PROXY CFG - 3 BACKEND SERVERS
+  hosts: HAPROXY-CLIENT
+  vars:
+    http_port: 80
+  tasks:
+  - name: install APACHE
+    package:
+      name: "httpd"
+      state: present
+
+  - name: install PHP
+    package:
+      name: "php"
+      state: present
+
+  - name:
+    copy:
+      src: "/ANSIBLE/HAPROXY-AUTOMATIC/phpfile.php"
+      dest: "/var/www/html/index.php"
+
+  - name: start APACHE
+    service:
+      name: "httpd"
+      state: "restarted"
+      enabled: yes
